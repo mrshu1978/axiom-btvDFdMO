@@ -3,3 +3,4 @@ Thumbs.db
 *.log
 # Axiom coordination (V6.0)
 .axiom/
+.claude/
