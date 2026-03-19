@@ -1,13 +1,10 @@
-// Canvas setup
 const canvas = document.getElementById('fireworks-canvas');
 const ctx = canvas.getContext('2d');
 const button = document.getElementById('launch-btn');
 
 let rocketsList = [];
 let particlesList = [];
-let animationId = null;
 
-// Resize handler
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -15,12 +12,10 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// Utility functions
 function random(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-// Rocket class
 class Rocket {
     constructor() {
         this.x = random(canvas.width * 0.1, canvas.width * 0.9);
@@ -30,7 +25,7 @@ class Rocket {
         this.trail = [];
         this.trailLength = 8;
         this.gravity = 0.3;
-        this.exploded = false;
+        this.dead = false;
     }
 
     update() {
@@ -43,14 +38,12 @@ class Rocket {
             this.trail.shift();
         }
 
-        // Check apex (when starts falling)
-        if (this.vy >= 0 && !this.exploded) {
+        if (this.vy >= 0) {
             this.explode();
         }
     }
 
     draw() {
-        // Draw trail
         if (this.trail.length > 1) {
             ctx.beginPath();
             ctx.moveTo(this.trail[0].x, this.trail[0].y);
@@ -70,27 +63,19 @@ class Rocket {
     }
 
     explode() {
-        this.exploded = true;
-        const particleCount = random(90, 110);
+        this.dead = true;
+        const particleCount = Math.floor(random(90, 110));
         for (let i = 0; i < particleCount; i++) {
             particlesList.push(new Particle(this.x, this.y));
-        }
-        // Remove rocket from list
-        const index = rocketsList.indexOf(this);
-        if (index > -1) {
-            rocketsList.splice(index, 1);
         }
     }
 }
 
-// Particle class
 class Particle {
     constructor(x, y) {
         this.x = x;
         this.y = y;
         this.hue = random(0, 360);
-        this.saturation = '90%';
-        this.lightness = '60%';
         const angle = random(0, Math.PI * 2);
         const speed = random(2, 7);
         this.vx = Math.cos(angle) * speed;
@@ -115,7 +100,6 @@ class Particle {
         this.alpha = this.life;
 
         if (this.isSparkle && this.life > 0.5) {
-            // Generate sub-sparkles
             for (let i = 0; i < 3; i++) {
                 this.sparkles.push({
                     x: this.x,
@@ -128,7 +112,6 @@ class Particle {
             }
         }
 
-        // Update sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             const sp = this.sparkles[i];
             sp.life -= sp.decay;
@@ -137,36 +120,25 @@ class Particle {
                 this.sparkles.splice(i, 1);
             }
         }
-
-        // Remove particle if dead
-        if (this.life <= 0) {
-            const index = particlesList.indexOf(this);
-            if (index > -1) {
-                particlesList.splice(index, 1);
-            }
-        }
     }
 
     draw() {
-        // Draw main particle
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}, ${this.lightness}, ${this.alpha})`;
+        ctx.fillStyle = `hsla(${this.hue}, 90%, 60%, ${this.alpha})`;
         ctx.fill();
 
-        // Draw sparkles
         for (const sp of this.sparkles) {
             ctx.beginPath();
             ctx.arc(sp.x, sp.y, sp.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}, ${this.lightness}, ${sp.alpha})`;
+            ctx.fillStyle = `hsla(${this.hue}, 90%, 60%, ${sp.alpha})`;
             ctx.fill();
         }
     }
 }
 
-// Launch fireworks
 function launchFireworks() {
-    const rocketCount = random(8, 12);
+    const rocketCount = Math.floor(random(8, 12));
     for (let i = 0; i < rocketCount; i++) {
         setTimeout(() => {
             rocketsList.push(new Rocket());
@@ -174,36 +146,28 @@ function launchFireworks() {
     }
 }
 
-// Animation loop
 function animate() {
-    // Clear with fade effect
     ctx.fillStyle = 'rgba(8, 12, 20, 0.18)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Update and draw rockets
-    for (const rocket of rocketsList) {
+    rocketsList = rocketsList.filter(rocket => {
         rocket.update();
-        rocket.draw();
-    }
+        if (!rocket.dead) rocket.draw();
+        return !rocket.dead;
+    });
 
-    // Update and draw particles
-    for (const particle of particlesList) {
+    particlesList = particlesList.filter(particle => {
         particle.update();
         particle.draw();
-    }
+        return particle.life > 0;
+    });
 
-    // No need to check animation end - button is always enabled
-
-    animationId = requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 }
 
-// Start animation loop
 animate();
 
-// Button event listener
 button.addEventListener('click', launchFireworks);
-
-// Prevent context menu on canvas
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 console.log('Fireworks engine ready');
