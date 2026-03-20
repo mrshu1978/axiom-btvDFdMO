@@ -141,7 +141,7 @@ class Particle {
 
 class Sleigh {
     constructor() {
-        this.x = canvas.width + 300;
+        this.x = canvas.width + 120;
         this.y = random(canvas.height * 0.08, canvas.height * 0.28);
         this.speed = random(3.5, 5.5);
         this.dead = false;
@@ -155,38 +155,99 @@ class Sleigh {
         this.bobOffset += 0.05;
         if (this.alpha < 1) this.alpha = Math.min(1, this.alpha + 0.025);
 
-        if (Math.random() < 0.5) {
+        if (Math.random() < 0.6) {
             this.trail.push({
-                x: this.x + 230,
-                y: this.y + Math.sin(this.bobOffset) * 8,
-                alpha: 0.9,
-                size: random(2, 4)
+                x: this.x + 40,
+                y: this.y + Math.sin(this.bobOffset) * 8 + 30,
+                alpha: 1.0,
+                size: random(3, 6)
             });
         }
         for (let i = this.trail.length - 1; i >= 0; i--) {
-            this.trail[i].alpha -= 0.025;
+            this.trail[i].alpha -= 0.03;
             if (this.trail[i].alpha <= 0) this.trail.splice(i, 1);
         }
 
-        if (this.x < -400) this.dead = true;
+        if (this.x < -200) this.dead = true;
     }
 
     draw() {
-        const yPos = this.y + Math.sin(this.bobOffset) * 8;
+        const cx = this.x;
+        const cy = this.y + Math.sin(this.bobOffset) * 8;
         ctx.save();
+        ctx.globalAlpha = this.alpha;
 
+        // Beam thruster trail (cyan)
         for (const star of this.trail) {
             ctx.globalAlpha = star.alpha * this.alpha;
             ctx.beginPath();
             ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#00FFFF';
             ctx.fill();
         }
-
         ctx.globalAlpha = this.alpha;
-        ctx.font = '48px serif';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🦌🦌🦌🎅🛷', this.x, yPos);
+
+        const f = (color, x, y, w, h) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(cx + x, cy + y, w, h);
+        };
+
+        // === GUNDAM RX-78 (facing left) ===
+
+        // Legs
+        f('#FFFFFF', -14, 32, 11, 28);
+        f('#FFFFFF',   3, 32, 11, 28);
+        // Feet
+        f('#3366CC', -16, 56, 14,  8);
+        f('#3366CC',   2, 56, 14,  8);
+        // Red knee guards
+        f('#CC0000', -14, 42,  11,  6);
+        f('#CC0000',   3, 42,  11,  6);
+
+        // Waist
+        f('#FFFFFF', -13, 28, 26,  6);
+        f('#3366CC',  -8, 29, 16,  4);
+
+        // Torso
+        f('#FFFFFF', -18, 10, 36, 20);
+        // Chest plates (blue)
+        f('#3366CC', -16, 12, 13, 10);
+        f('#3366CC',   3, 12, 13, 10);
+        // Core (yellow)
+        f('#FFCC00',  -4, 14,  8,  6);
+
+        // Shoulders (blue, larger)
+        f('#3366CC', -30,  6, 15, 18);
+        f('#3366CC',  15,  6, 15, 18);
+        // Shoulder trim (white)
+        f('#FFFFFF', -30,  6, 15,  4);
+        f('#FFFFFF',  15,  6, 15,  4);
+
+        // Arms
+        f('#FFFFFF', -28, 22, 10, 20);
+        f('#FFFFFF',  18, 22, 10, 20);
+        // Hands
+        f('#3366CC', -28, 40, 10,  5);
+        f('#3366CC',  18, 40, 10,  5);
+
+        // Neck
+        f('#CCCCCC',  -4,  0,  8,  12);
+
+        // Head
+        f('#FFFFFF', -10, -18, 20, 20);
+        // Face mask (blue)
+        f('#3366CC', -10,  -6, 20, 10);
+        // Eyes (yellow visor)
+        f('#FFFF00',  -8,  -14, 16,  5);
+        // Chin vent
+        f('#CC0000',  -4,   2,  8,  3);
+
+        // Center antenna
+        f('#FFFF00',  -2, -30,  4, 14);
+        // V-fin left & right
+        f('#FFFF00', -10, -26,  9,  4);
+        f('#FFFF00',   1, -26,  9,  4);
+
         ctx.restore();
     }
 }
