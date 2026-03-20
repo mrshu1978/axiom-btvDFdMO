@@ -4,6 +4,8 @@ const button = document.getElementById('launch-btn');
 
 let rocketsList = [];
 let particlesList = [];
+let sleighList = [];
+let fireworksWaiting = false;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -137,13 +139,69 @@ class Particle {
     }
 }
 
+class Sleigh {
+    constructor() {
+        this.x = canvas.width + 300;
+        this.y = random(canvas.height * 0.08, canvas.height * 0.28);
+        this.speed = random(3.5, 5.5);
+        this.dead = false;
+        this.alpha = 0;
+        this.bobOffset = 0;
+        this.trail = [];
+    }
+
+    update() {
+        this.x -= this.speed;
+        this.bobOffset += 0.05;
+        if (this.alpha < 1) this.alpha = Math.min(1, this.alpha + 0.025);
+
+        if (Math.random() < 0.5) {
+            this.trail.push({
+                x: this.x + 230,
+                y: this.y + Math.sin(this.bobOffset) * 8,
+                alpha: 0.9,
+                size: random(2, 4)
+            });
+        }
+        for (let i = this.trail.length - 1; i >= 0; i--) {
+            this.trail[i].alpha -= 0.025;
+            if (this.trail[i].alpha <= 0) this.trail.splice(i, 1);
+        }
+
+        if (this.x < -400) this.dead = true;
+    }
+
+    draw() {
+        const yPos = this.y + Math.sin(this.bobOffset) * 8;
+        ctx.save();
+
+        for (const star of this.trail) {
+            ctx.globalAlpha = star.alpha * this.alpha;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD700';
+            ctx.fill();
+        }
+
+        ctx.globalAlpha = this.alpha;
+        ctx.font = '48px serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🦌🦌🦌🎅🛷', this.x, yPos);
+        ctx.restore();
+    }
+}
+
 function launchFireworks() {
     const rocketCount = Math.floor(random(8, 12));
+    fireworksWaiting = false;
     for (let i = 0; i < rocketCount; i++) {
         setTimeout(() => {
             rocketsList.push(new Rocket());
         }, i * 120);
     }
+    setTimeout(() => {
+        fireworksWaiting = true;
+    }, (rocketCount - 1) * 120 + 200);
 }
 
 function animate() {
@@ -160,6 +218,17 @@ function animate() {
         particle.update();
         particle.draw();
         return particle.life > 0;
+    });
+
+    if (fireworksWaiting && rocketsList.length === 0 && particlesList.length === 0) {
+        fireworksWaiting = false;
+        sleighList.push(new Sleigh());
+    }
+
+    sleighList = sleighList.filter(sleigh => {
+        sleigh.update();
+        sleigh.draw();
+        return !sleigh.dead;
     });
 
     requestAnimationFrame(animate);
